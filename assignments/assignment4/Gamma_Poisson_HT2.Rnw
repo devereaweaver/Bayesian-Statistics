@@ -1,0 +1,49 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+ 
+<< echo=FALSE, results=tex>>=
+library("xtable")
+# Data
+Y      <- 11
+
+# Deifne three priors
+a      <- c(0.5, 1, 10)
+b      <- c(0.5, 1, 2)
+lab<-c("a=b=0.5", "a=b=1", "a=10, b=2")
+
+A<-a+Y
+B<-b+1
+
+# H_0: lamda=10
+
+lambda0<-10
+epsilon <- 0.000001
+
+post.h0<-pgamma(lambda0+epsilon,A,rate=B)-pgamma(lambda0-epsilon,A,rate=B) #This is for Null with less than or equal sign; If the null is greater than or equal use 1-pbeta(theta0, A,B), i.e.,depends on the form of the null hyposthesis
+post.h1<-1-post.h0
+odd.post.h1<-post.h1/post.h0
+
+prior.h0<-pgamma(lambda0+epsilon,a,rate=b)-pgamma(lambda0-epsilon,a,rate=b)
+prior.h1<-1-prior.h0
+odd.prior.h1<-prior.h1/prior.h0
+
+BF<-odd.post.h1/odd.prior.h1
+
+output <- cbind(H0.prior=prior.h0,H0.post=post.h0,BF10=BF)
+ 
+rownames(output)<-lab
+
+print(xtable(output, include.rownames=TRUE, include.colnames=TRUE,display=c("s","s","s","g")))
+@
+ 
+<<alternatively, echo=FALSE, results=tex>>=
+
+BF2<-b^a*gamma(A)*exp(lambda0)/(lambda0^Y*B^A*gamma(a))
+
+print(round(BF2, digits=4))
+@
+
+
+\end{document}

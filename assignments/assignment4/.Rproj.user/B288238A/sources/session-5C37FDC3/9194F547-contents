@@ -1,0 +1,48 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+\begin{figure}
+\begin{center}
+<<fig=TRUE, scale=1.5, echo=FALSE, results=hide>>=
+
+# Data
+Y      <- 11
+
+# Deifne three priors
+a      <- c(0.5, 1, 10)
+b      <- c(0.5, 1, 2)
+lab<-c("a=b=0.5", "a=b=1", "a=10, b=2")
+
+par(mfrow=c(1,2))
+## Plot the three priors
+lambda   <- seq(0.01,15,length=200)
+prior1 <- dgamma(lambda,a[1],b[1])
+prior2 <- dgamma(lambda, a[2],b[2]) 
+prior3 <- dgamma(lambda, a[3],b[3])
+
+plot(lambda,prior3,type="l",col = 3,
+     # cex.lab=cex,cex.axis=cex,
+      xlab=expression(lambda),ylab="Prior")
+ lines(lambda,prior1,col=1)
+ lines(lambda,prior2,col =2)
+legend("topright",lab,col=c(1,2,3), lty=1, cex=0.5)
+
+# Plot the posterior distribution
+
+post1 <- dgamma(lambda,a[1]+Y,b[1]+1)
+post2 <- dgamma(lambda, a[2]+Y,b[2]+1) 
+post3 <- dgamma(lambda, a[3]+Y,b[3]+1)
+
+plot(lambda,post3,type="l",col = 3,
+     # cex.lab=cex,cex.axis=cex,
+      xlab=expression(lambda),ylab="Posterior")
+ lines(lambda,post1,col=1)
+ lines(lambda,post2,col =2)
+legend("topright",lab,col=c(1,2,3), lty=1, cex=0.5)
+@
+\end{center}
+\end{figure}
+
+
+\end{document}
