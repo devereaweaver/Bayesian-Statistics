@@ -1,0 +1,78 @@
+# Write function that takes Y, N, a, b, theta0 (hypothesized value of parameter) and 
+# type (left, right, two sided) for the type of hypothesis testing to be conducted
+
+beta_binom <- function(Y, N, theta0, type, a = 1, b = 1, 
+                       title = "Prior and Posterior Distribution")
+{
+  # beta_binom() - returns a list of posterior mean and variance values where 
+  # the prior distribution follows Beta and the posterior is Binomial
+  
+  # Arguments:
+  # Y = number of success for Binomial
+  # N = number of trials for Binomial
+  # a, b are size and rate parameters for prior Beta distribution 
+  # theta0 = hypothesized value for unknown parameter
+  # type = type of hypothesis test to be conducted (one-sided or two-sided)
+  A <- Y + a
+  B <- N - Y + b
+  
+  if (type == "left" | type == "right") { # one sided 
+    # compute priors
+    prior.h0 <- pbeta(theta0, a, b)
+    prior.h1 <- 1 - prior.h0
+    prior.odds <- prior.h1 / prior.h0
+    
+    # compute posterior probability for null, alternative, and odds
+    posterior.h0 <- pbeta(theta0, A, B)
+    posterior.h1 <- 1 - posterior.h0
+    posterior.odds <- posterior.h1 / posterior.h0
+    
+    # Compute Bayes Factor for one-sided test
+    bayes.factor <- posterior.odds / prior.odds
+  } else if (type == "two sided") { # two sided
+    # choose machine epsilon as epsilon 
+    #epsilon = .Machine$double.eps
+    epsilon = 0.000000003
+    
+    # compute priors
+    prior.h0<-pbeta((theta0+epsilon),a,b)-pbeta((theta0-epsilon),a,b)
+    prior.h1 <- 1 - prior.h0
+    prior.odds <- prior.h1 / prior.h0
+    
+    # compute posteriors
+    posterior.h0<-pbeta((theta0+epsilon),A, B) - pbeta((theta0-epsilon),A,B)
+    posterior.h1 <- 1 - posterior.h0
+    posterior.odds <- posterior.h1 / posterior.h0
+    
+    # compute two-sides Bayes Factor
+    bayes.factor <- posterior.odds / prior.odds  
+  }
+  mylist <- list(prior.h0, posterior.h0, bayes.factor)
+  return(mylist)
+}
+
+#===============================================================================
+# (c) Y = 20, N = 30 trials, conducted Bayesian hypothesis where H0 <= 0.5
+# and H > 0.5. Perform the analysis twice with uninformative prior and then 
+# compute again with the informative prior,
+# in other words, conduct analysis with right side test 
+# state decision and results
+
+# uninformative prior
+beta_binom(Y=20, N=30, theta0=0.5, type = "right", a = 1, b = 1)
+# here we would reject H0 in favor of H1
+
+# informative prior
+beta_binom(Y=20, N=30, theta0=0.5, type="right", a = 2.98, b = 1.28)
+# here we would reject H0 in favor of H1
+
+
+# (d) using same parameters, conduct a two sided-test and  state decision 
+# and conclusion
+# uninformative prior
+beta_binom(Y=20, N=30, theta0=0.5, type = "two sided", a = 1, b = 1)
+# here we should fail to reject H0
+
+# informative prior
+beta_binom(Y=20, N=30, theta0=0.5, type = "two sided", a = 2.98, b = 1.28)
+# ...fail to reject H0??
