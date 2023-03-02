@@ -1,0 +1,337 @@
+---
+title: "Assignment 4"
+author: "Devere Anthony Weaver"
+date: '2023-03-02'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+---
+
+# Problem 1
+
+```{r}
+beta_binom <- function(Y, N, theta0, type, a = 1, b = 1, 
+                       title = "Prior and Posterior Distribution")
+{
+  # beta_binom() - returns a list of posterior mean and variance values where 
+  # the prior distribution follows Beta and the posterior is Binomial
+  
+  # Arguments:
+  # Y = number of success for Binomial
+  # N = number of trials for Binomial
+  # a, b are size and rate parameters for prior Beta distribution 
+  # theta0 = hypothesized value for unknown parameter
+  # type = type of hypothesis test to be conducted (one-sided or two-sided)
+  A <- Y + a
+  B <- N - Y + b
+  
+  if (type == "left" | type == "right") { # one sided 
+    # compute priors
+    prior.h0 <- pbeta(theta0, a, b)
+    prior.h1 <- 1 - prior.h0
+    prior.odds <- prior.h1 / prior.h0
+    
+    # compute posterior probability for null, alternative, and odds
+    posterior.h0 <- pbeta(theta0, A, B)
+    posterior.h1 <- 1 - posterior.h0
+    posterior.odds <- posterior.h1 / posterior.h0
+    
+    # Compute Bayes Factor for one-sided test
+    bayes.factor <- posterior.odds / prior.odds
+  } else if (type == "two sided") { # two sided
+    # choose machine epsilon as epsilon 
+    #epsilon = .Machine$double.eps
+    epsilon = 0.000000003
+    
+    # compute priors
+    prior.h0<-pbeta((theta0+epsilon),a,b)-pbeta((theta0-epsilon),a,b)
+    prior.h1 <- 1 - prior.h0
+    prior.odds <- prior.h1 / prior.h0
+    
+    # compute posteriors
+    posterior.h0<-pbeta((theta0+epsilon),A, B) - pbeta((theta0-epsilon),A,B)
+    posterior.h1 <- 1 - posterior.h0
+    posterior.odds <- posterior.h1 / posterior.h0
+    
+    # compute two-sides Bayes Factor
+    bayes.factor <- posterior.odds / prior.odds  
+  }
+  mylist <- list(prior.h0, posterior.h0, bayes.factor)
+  return(mylist)
+}
+```
+
+
+(b) The values of $a$ and $b$ that give prior mean $0.7$ and prior 
+standard deviation $0.2$ are $2.98$ and $1.28$ respectively. 
+
+(c) Conduct Bayesian analysis using $N=30$ and $Y=20$. Once with uninformative 
+prior and again with the informative prior. 
+
+```{r}
+# uninformative prior
+beta_binom(Y=20, N=30, theta0=0.5, type = "right", a = 1, b = 1)
+# here we would reject H0 in favor of H1
+```
+
+```{r}
+# informative prior
+beta_binom(Y=20, N=30, theta0=0.5, type="right", a = 2.98, b = 1.28)
+# here we would reject H0 in favor of H1
+```
+
+(d) Conduct a two-tailed Bayesian analysis. 
+
+```{r}
+# uninformative prior
+beta_binom(Y=20, N=30, theta0=0.5, type = "two sided", a = 1, b = 1)
+# here we should fail to reject H0
+```
+
+```{r}
+# informative prior
+beta_binom(Y=20, N=30, theta0=0.5, type = "two sided", a = 2.98, b = 1.28)
+```
+
+TODO: Add conclusions and add descriptive names to the outcomes. 
+
+\clearpage
+
+---
+# Problem 2 
+
+(a) The posterior distribution for $\lambda$ is given by, 
+$$f(\lambda|y) \propto Gamma(a+y, b+1). $$
+
+(b) The posterior mean is given by, 
+$$E(\lambda|y) = \frac{a+y}{b+1}.$$
+The posterior variance is given by,
+$$Var(\lambda|y) = \frac{a}{b^2}.$$
+
+(c) R Function 
+
+```{r}
+pois_gamma <- function(Y, a = 1, b = 1, title = "Prior and Posterior Distribution")
+{
+  # pois_gamma() - returns a list of posterior mean and variance values where 
+  # the prior distribution follows Beta and the posterior is Binomial
+  
+  # Arguments:
+  # Y = observations of random variable
+  # a  = shape parameter for Gamma distribution 
+  # b = rate parameter for Gamma distribution 
+  
+  lambda <- seq(0,1,length=10000)    # values of theta following beta distribution
+  
+  # only plotting one prior 
+  prior = dgamma(lambda, a, b)
+  posterior = dgamma(lambda, Y + a, Y + b)
+  
+  # plot the actual priors  
+  label = c("Prior", "Posterior")
+  plot.new()
+  plot(lambda,prior,
+       type="l",
+       col = 4,
+       xlab=expression(lambda),
+       ylab="Prior", 
+       ylim = c(0, max(posterior)),
+       xlim = c(0, 1.1)
+  )
+  lines(lambda,prior,col=1)
+  lines(lambda, posterior, col = 2)
+  title(main = title)
+  legend("topright",label,col=c(1,2), lty=1, cex=.9)
+  
+  # compute posterior mean and posterior standard deviation
+  posterior_mean <- (Y + a) / (b + 1)
+  posterior_var <- a / b^2
+  posterior_sd <- sqrt(posterior_var)
+ 
+  # return posterior mean and variance 
+  mylist <- list("posterior mean" = posterior_mean, "posterior standard deviation" = posterior_sd)
+  return(mylist)
+}
+```
+
+(d) The values of a and b that give prior mean $5$ and prior standard deviation 
+$2.5$ are $a=15.81139$ and $b=3.162278$.
+
+(e) Conduct Bayesian analysis using $Y = 11$, once with uninformative and again
+with informative. 
+
+```{r}
+# uninformative prior
+pois_gamma(Y = 11)
+```
+
+```{r}
+# informative prior 
+pois_gamma(Y = 11, a = 15.81139, b = 3.152278)
+```
+
+(f) TODO: Summarize results
+
+(g) Conduct upper-tailed hypothesis test.
+
+```{r}
+#==============================================================================
+# H0: lambda <= 10
+# H1: lambda > 10
+#==============================================================================
+# Data
+Y <- 11
+
+# Define one prior
+a  <- c(0.5, 1, 10)
+b  <- c(0.5, 1, 2) 
+lab <- c("a=b=0.5", "a=b=1", "a=10, b=2")
+
+# posterior parameters
+A <- a+Y
+B <- b+1
+
+# parameter
+lambda <-10
+
+# compute priors 
+prior.h0 <- pgamma(lambda, shape = a, rate = b)
+prior.h1 <- 1 - prior.h0
+prior.odds <- prior.h1 / prior.h0
+
+# compute posteriors
+posterior.h0 <- pgamma(lambda,shape=A,rate=B) 
+posterior.h1 <- 1-posterior.h0
+posterior.odds <- posterior.h1 / posterior.h0
+
+# compute Bayes Factor
+bayes.factor <- posterior.odds / prior.odds
+
+# output results
+output <- cbind(H0.prior=prior.h0,H0.post=posterior.h0,BF10=bayes.factor)
+output
+```
+
+(h) Conduct two-tailed test.
+
+```{r}
+#==============================================================================
+# H0: lambda = 10
+# H1: lambda =/= 10
+#==============================================================================
+# Data
+Y <- 11
+
+# priors
+a <- c(0.5, 1, 10)
+b <- c(0.5, 1, 2)
+lab <- c("a=b=0.5", "a=b=1", "a=10, b=2")
+
+# posteriors
+A <- a+Y
+B <- b+1
+
+# parameters and perturbation
+lambda <- 10
+epsilon <- 0.000001
+
+# compute priors
+prior.h0 <- pgamma(lambda+epsilon,shape=a,rate=b) - pgamma(lambda-epsilon,shape=a,rate=b)
+prior.h1 <- 1-prior.h0
+prior.odds <- prior.h1 / prior.h0
+
+# compute posteriors
+posterior.h0 <- pgamma(lambda+epsilon,shape=A,rate=B) - pgamma(lambda-epsilon,shape=A,rate=B) 
+posteriror.h1 <- 1-posterior.h0
+posterior.odds <- posteriror.h1 / posterior.h0
+
+# compute bayes factor
+bayes.factor <- posterior.odds / prior.odds
+
+# output results
+output <- cbind(H0.prior=prior.h0,H0.post=posterior.h0,BF10=bayes.factor)
+output
+```
+
+TODO: State conclusions and decisions. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
