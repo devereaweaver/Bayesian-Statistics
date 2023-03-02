@@ -13,6 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Problem 1
 
+(a) Write R function.
+
 ```{r}
 beta_binom <- function(Y, N, theta0, type, a = 1, b = 1, 
                        title = "Prior and Posterior Distribution")
@@ -61,6 +63,7 @@ beta_binom <- function(Y, N, theta0, type, a = 1, b = 1,
     bayes.factor <- posterior.odds / prior.odds  
   }
   mylist <- list(prior.h0, posterior.h0, bayes.factor)
+  names(mylist) <- c("Prior Null", "Posterior Null", "Bayes Factor")
   return(mylist)
 }
 ```
